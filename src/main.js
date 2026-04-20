@@ -1,29 +1,26 @@
 import './style.css';
 import mapboxgl from 'mapbox-gl';
+import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
 
-// Cargar token desde las variables de entorno de Vite (.env)
+// Fetch token from .env
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-// Inicializar el mapa
+// Default to Madrid initially
+const defaultCenter = [-3.703790, 40.416775];
+
 const map = new mapboxgl.Map({
     container: 'map',
-    style: 'mapbox://styles/mapbox/satellite-streets-v12', // Estilo de satélite con calles
-    center: [-3.703790, 40.416775], // Centro en Madrid por defecto
+    style: 'mapbox://styles/mapbox/satellite-streets-v12',
+    center: defaultCenter, 
     zoom: 5,
-    pitch: 0, // Inclinación inicial
-    bearing: 0 // Rotación inicial
+    pitch: 0,
+    bearing: 0
 });
 
-// Controles de navegación (zoom, rotación)
-map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+// Map controls
+map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
-// Variable para el marcador
-let currentMarker = null;
-
-// Referencias a elementos del DOM
-const infoPanel = document.getElementById('info');
-
-// Añadir terreno 3D cuando el estilo cargue
+// Wait for style load
 map.on('style.load', () => {
     map.addSource('mapbox-dem', {
         'type': 'raster-dem',
@@ -31,11 +28,7 @@ map.on('style.load', () => {
         'tileSize': 512,
         'maxzoom': 14
     });
-
-    // Configurar la exageración del terreno para que el relieve se note más
     map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
-
-    // Añadir capa de cielo para mejorar el aspecto 3D
     map.addLayer({
         'id': 'sky',
         'type': 'sky',
@@ -47,62 +40,177 @@ map.on('style.load', () => {
     });
 });
 
-// Evento al hacer clic en el mapa
+// Setup Geocoder
+const geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken,
+    mapboxgl: mapboxgl,
+    placeholder: 'Buscar ubicación o introducir Lat, Lon...',
+    marker: false
+});
+document.getElementById('geocoder-container').appendChild(geocoder.onAdd(map));
+
+let currentMarker = null;
+
+// UI Elements
+const tooltip = document.getElementById('map-tooltip');
+const headerCoords = document.getElementById('header-coords');
+const coordsInput = document.getElementById('coords-input');
+const dateInput = document.getElementById('date-input');
+const panel = document.getElementById('prediction-panel');
+const closeBtn = document.getElementById('close-panel-btn');
+const tabRiesgo = document.getElementById('tab-riesgo');
+const tabFrp = document.getElementById('tab-frp');
+const resultsContainer = document.getElementById('results-container');
+const actionBtn = document.getElementById('action-btn');
+
+// Set today's date implicitly
+dateInput.valueAsDate = new Date();
+
+let activeTab = 'riesgo'; // 'riesgo' or 'frp'
+let hasPrediction = false;
+
+// Handle map clicks
 map.on('click', (e) => {
-    const coordinates = e.lngLat;
-    const lng = coordinates.lng.toFixed(5);
-    const lat = coordinates.lat.toFixed(5);
+    tooltip.style.opacity = '0'; // Hide tooltip on first click
+    panel.style.display = 'flex'; // Ensure panel is open
+    setCoordinates(e.lngLat.lng, e.lngLat.lat);
+});
 
-    // Si ya hay un marcador, removerlo
-    if (currentMarker) {
-        currentMarker.remove();
-    }
+// Handle geocoder result
+geocoder.on('result', (e) => {
+    tooltip.style.opacity = '0';
+    panel.style.display = 'flex';
+    setCoordinates(e.result.center[0], e.result.center[1]);
+});
 
-    // Crear un nuevo marcador y añadirlo al mapa
-    currentMarker = new mapboxgl.Marker({ color: '#38bdf8' })
-        .setLngLat(coordinates)
+// Set coordinates function
+function setCoordinates(lng, lat) {
+    const formatLng = lng.toFixed(4);
+    const formatLat = lat.toFixed(4);
+    const lngDir = lng >= 0 ? 'E' : 'W';
+    const latDir = lat >= 0 ? 'N' : 'S';
+    
+    const coordString = `${Math.abs(formatLat)}° ${latDir}, ${Math.abs(formatLng)}° ${lngDir}`;
+    
+    headerCoords.textContent = coordString;
+    coordsInput.value = coordString;
+
+    if (currentMarker) currentMarker.remove();
+    currentMarker = new mapboxgl.Marker({ color: '#3182ce' })
+        .setLngLat([lng, lat])
         .addTo(map);
 
-    // Animar la cámara: hacer zoom, inclinar (pitch) y rotar (bearing)
-    // para mostrar el relieve en 3D
-    map.flyTo({
-        center: coordinates,
-        zoom: 13, // Zoom más cercano para ver relieve
-        pitch: 65, // Inclinación para vista 3D
-        bearing: Math.random() * 90 - 45, // Rotación aleatoria para dinamismo
-        duration: 2500, // Duración de la animación en ms
-        essential: true
-    });
-
-    // Actualizar el panel de información
-    updateInfoPanel(lng, lat);
-});
-
-// Cambiar cursor al pasar sobre el mapa
-map.on('mouseenter', 'places', () => {
-    map.getCanvas().style.cursor = 'pointer';
-});
-
-map.on('mouseleave', 'places', () => {
-    map.getCanvas().style.cursor = '';
-});
-
-// Función para actualizar el panel de información
-function updateInfoPanel(lng, lat) {
-    infoPanel.innerHTML = `
-        <h3>Punto Seleccionado</h3>
-        <div class="coordinate-box">
-            <div class="coord-row">
-                <span class="coord-label">Longitud</span>
-                <span class="coord-value">${lng}°</span>
-            </div>
-            <div class="coord-row">
-                <span class="coord-label">Latitud</span>
-                <span class="coord-value">${lat}°</span>
-            </div>
-        </div>
-        <p style="margin-top: 15px; font-size: 0.85rem; color: #94a3b8;">
-            Explorando relieve en 3D. Usa el ratón (click derecho + arrastrar) para cambiar el ángulo.
-        </p>
-    `;
+    // Reset prediction state when a new point is selected
+    hasPrediction = false;
+    updateUIState();
 }
+
+// Interactivity
+closeBtn.addEventListener('click', () => {
+    panel.style.display = 'none';
+});
+
+tabRiesgo.addEventListener('click', () => {
+    activeTab = 'riesgo';
+    tabRiesgo.classList.add('active');
+    tabFrp.classList.remove('active');
+    if (hasPrediction) generateMockPrediction();
+});
+
+tabFrp.addEventListener('click', () => {
+    activeTab = 'frp';
+    tabFrp.classList.add('active');
+    tabRiesgo.classList.remove('active');
+    if (hasPrediction) generateMockPrediction();
+});
+
+actionBtn.addEventListener('click', () => {
+    if(!coordsInput.value) {
+        alert("Por favor, selecciona una ubicación en el mapa primero.");
+        return;
+    }
+    hasPrediction = true;
+    updateUIState();
+    generateMockPrediction();
+});
+
+function updateUIState() {
+    if (hasPrediction) {
+        actionBtn.textContent = 'Recalcular predicción';
+        actionBtn.classList.add('outline-btn');
+        actionBtn.classList.remove('primary-btn');
+    } else {
+        resultsContainer.innerHTML = '';
+        actionBtn.textContent = 'Generar predicción';
+        actionBtn.classList.remove('outline-btn');
+        actionBtn.classList.add('primary-btn');
+    }
+}
+
+function generateMockPrediction() {
+    if (activeTab === 'riesgo') {
+        resultsContainer.innerHTML = `
+            <div class="result-section">
+                <div class="result-header">Resultado de la Predicción</div>
+                <div class="risk-probability">PROBABILIDAD DE INCENDIO: 95%</div>
+                
+                <div class="factors-title">Principales Factores Determinantes (Impacto)</div>
+                
+                <div class="factor-item">
+                    <div class="factor-header">
+                        <span class="factor-icon">🌡️</span> Alta Temperatura (34ºC)
+                    </div>
+                    <div class="progress-bg"><div class="progress-bar pb-red"></div></div>
+                </div>
+                
+                <div class="factor-item">
+                    <div class="factor-header">
+                        <span class="factor-icon">💧</span> Baja Humedad (18%)
+                    </div>
+                    <div class="progress-bg"><div class="progress-bar pb-orange"></div></div>
+                </div>
+                
+                <div class="factor-item">
+                    <div class="factor-header">
+                        <span class="factor-icon">💨</span> Viento Moderado (20 km/h)
+                    </div>
+                    <div class="progress-bg"><div class="progress-bar pb-yellow"></div></div>
+                </div>
+                
+                <div class="factor-item">
+                    <div class="factor-header">
+                        <span class="factor-icon">🌿</span> Sequedad de la Vegetación (Extrema)
+                    </div>
+                    <div class="progress-bg"><div class="progress-bar pb-extreme"></div></div>
+                </div>
+            </div>
+        `;
+    } else {
+        resultsContainer.innerHTML = `
+            <div class="result-section">
+                <div class="result-header">Resultado de la Predicción de FRP</div>
+                <div class="frp-title">FRP ESTIMADO:</div>
+                <div class="frp-value">87.3 MW</div>
+                <div class="frp-subtitle">Potencia Radiativa del Fuego Estimada</div>
+            </div>
+        `;
+    }
+}
+
+// Current Location Button
+document.getElementById('target-btn').addEventListener('click', () => {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const lng = position.coords.longitude;
+                const lat = position.coords.latitude;
+                map.flyTo({ center: [lng, lat], zoom: 12 });
+                setCoordinates(lng, lat);
+                panel.style.display = 'flex';
+            },
+            () => {
+                alert("No se pudo obtener la ubicación actual.");
+            }
+        );
+    }
+});
