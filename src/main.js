@@ -63,8 +63,15 @@ const tabFrp = document.getElementById('tab-frp');
 const resultsContainer = document.getElementById('results-container');
 const actionBtn = document.getElementById('action-btn');
 
-// Set today's date implicitly
-dateInput.valueAsDate = new Date();
+// Set today's date implicitly and restrict past dates
+const today = new Date();
+const year = today.getFullYear();
+const month = String(today.getMonth() + 1).padStart(2, '0');
+const day = String(today.getDate()).padStart(2, '0');
+const formattedToday = `${year}-${month}-${day}`;
+
+dateInput.value = formattedToday;
+dateInput.min = formattedToday;
 
 let activeTab = 'riesgo'; // 'riesgo' or 'frp'
 let hasPrediction = false;
@@ -74,6 +81,14 @@ map.on('click', (e) => {
     tooltip.style.opacity = '0'; // Hide tooltip on first click
     panel.style.display = 'flex'; // Ensure panel is open
     setCoordinates(e.lngLat.lng, e.lngLat.lat);
+    
+    map.flyTo({
+        center: [e.lngLat.lng, e.lngLat.lat],
+        zoom: 14,
+        pitch: 65,
+        duration: 1500, // Smooth transition duration
+        essential: true
+    });
 });
 
 // Handle geocoder result
