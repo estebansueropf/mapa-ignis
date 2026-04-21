@@ -1,15 +1,16 @@
 :root {
-  --text: #f0f6fc;
-  --text-muted: #8b949e;
-  --bg-dark: #0d1117;
-  --panel-bg: rgba(22, 27, 34, 0.85);
-  --panel-border: rgba(48, 54, 61, 0.8);
-  --accent-blue: #3b82f6;
-  --accent-blue-hover: #2563eb;
+  --text: #fdf6ef;
+  --text-muted: #a89890;
+  --bg-dark: #15090a;
+  --panel-bg: rgba(30, 14, 12, 0.82);
+  --panel-border: rgba(120, 40, 25, 0.55);
+  --accent-fire: #f97316;
+  --accent-fire-hover: #ea580c;
+  --accent-ember: #dc2626;
   --accent-red: #ef4444;
   --accent-orange: #f97316;
   --accent-yellow: #eab308;
-  --input-bg: rgba(13, 17, 23, 0.7);
+  --input-bg: rgba(20, 8, 7, 0.7);
   --font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -62,6 +63,30 @@ body {
   align-items: center;
   gap: 10px;
   z-index: 10;
+}
+
+#brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
+  filter: drop-shadow(0 4px 14px rgba(220, 38, 38, 0.45));
+}
+
+#brand:hover {
+  transform: translateY(-1px) scale(1.04);
+  filter: drop-shadow(0 6px 18px rgba(249, 115, 22, 0.65));
+}
+
+#brand img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .icon-btn {
@@ -219,7 +244,8 @@ body {
   transition: border-color 0.2s;
 }
 .input-group input:focus {
-  border-color: var(--accent-blue);
+  border-color: var(--accent-fire);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
 /* Date picker specific styling for dark mode */
@@ -261,15 +287,15 @@ body {
 }
 
 .tab-btn.active {
-  background-color: rgba(59, 130, 246, 0.1);
+  background: linear-gradient(180deg, rgba(249, 115, 22, 0.18), rgba(220, 38, 38, 0.12));
   color: #fff;
 }
 
 .tab-btn:first-child.active {
-  border-right: 1px solid var(--accent-blue);
+  border-right: 1px solid var(--accent-fire);
 }
 .tab-btn:last-child.active {
-  border-left: 1px solid var(--accent-blue);
+  border-left: 1px solid var(--accent-fire);
 }
 
 /* Results Area */
@@ -345,7 +371,7 @@ body {
 .frp-title {
   font-size: 1.5rem;
   font-weight: 800;
-  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  background: linear-gradient(90deg, #fbbf24, #f97316);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 5px;
@@ -353,7 +379,7 @@ body {
 .frp-value {
   font-size: 3rem;
   font-weight: 900;
-  background: linear-gradient(90deg, #38bdf8, #f97316);
+  background: linear-gradient(90deg, #fbbf24, #f97316, #dc2626);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1;
@@ -372,18 +398,21 @@ body {
 .primary-btn {
   width: 100%;
   padding: 12px;
-  background-color: var(--accent-blue);
+  background: linear-gradient(135deg, var(--accent-fire), var(--accent-ember));
   color: #fff;
   border: none;
   border-radius: 6px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: filter 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 6px 20px -6px rgba(220, 38, 38, 0.55);
 }
 
 .primary-btn:hover {
-  background-color: var(--accent-blue-hover);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 24px -6px rgba(249, 115, 22, 0.65);
+  transform: translateY(-1px);
 }
 
 .outline-btn {

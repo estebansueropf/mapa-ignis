@@ -194,7 +194,7 @@ function setCoordinates(lng, lat) {
     coordsInput.value = coordString;
 
     if (currentMarker) currentMarker.remove();
-    currentMarker = new mapboxgl.Marker({ color: '#3182ce' })
+    currentMarker = new mapboxgl.Marker({ color: '#f97316' })
         .setLngLat([lng, lat])
         .addTo(map);
 
