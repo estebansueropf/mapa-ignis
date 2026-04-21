@@ -154,12 +154,12 @@ function saveCurrentView() {
 }
 
 function openPanel() {
-    panel.style.display = 'flex';
+    panel.classList.remove('is-hidden');
     openPanelBtn.classList.add('hidden');
 }
 
 function closePanel() {
-    panel.style.display = 'none';
+    panel.classList.add('is-hidden');
     openPanelBtn.classList.remove('hidden');
 }
 
