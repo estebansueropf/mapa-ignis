@@ -84,6 +84,17 @@ body {
   color: var(--text);
 }
 
+.icon-btn.hidden {
+  display: none;
+}
+
+#open-panel-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
 /* Mapbox Geocoder overrides */
 .mapboxgl-ctrl-geocoder {
   background-color: var(--panel-bg) !important;

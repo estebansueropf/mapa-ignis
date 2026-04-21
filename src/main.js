@@ -70,6 +70,10 @@ const tabRiesgo = document.getElementById('tab-riesgo');
 const tabFrp = document.getElementById('tab-frp');
 const resultsContainer = document.getElementById('results-container');
 const actionBtn = document.getElementById('action-btn');
+const backBtn = document.getElementById('back-btn');
+const openPanelBtn = document.getElementById('open-panel-btn');
+
+let previousView = null;
 
 // Set today's date implicitly and restrict past dates
 const today = new Date();
@@ -118,9 +122,10 @@ map.on('click', async (e) => {
     }
 
     tooltip.style.opacity = '0'; // Hide tooltip on first click
-    panel.style.display = 'flex'; // Ensure panel is open
+    saveCurrentView();
+    openPanel();
     setCoordinates(lng, lat);
-    
+
     map.flyTo({
         center: [lng, lat],
         zoom: 14,
@@ -133,8 +138,47 @@ map.on('click', async (e) => {
 // Handle geocoder result
 geocoder.on('result', (e) => {
     tooltip.style.opacity = '0';
-    panel.style.display = 'flex';
+    saveCurrentView();
+    openPanel();
     setCoordinates(e.result.center[0], e.result.center[1]);
+});
+
+function saveCurrentView() {
+    previousView = {
+        center: map.getCenter(),
+        zoom: map.getZoom(),
+        pitch: map.getPitch(),
+        bearing: map.getBearing()
+    };
+    backBtn.classList.remove('hidden');
+}
+
+function openPanel() {
+    panel.style.display = 'flex';
+    openPanelBtn.classList.add('hidden');
+}
+
+function closePanel() {
+    panel.style.display = 'none';
+    openPanelBtn.classList.remove('hidden');
+}
+
+backBtn.addEventListener('click', () => {
+    if (!previousView) return;
+    map.flyTo({
+        center: previousView.center,
+        zoom: previousView.zoom,
+        pitch: previousView.pitch,
+        bearing: previousView.bearing,
+        duration: 1500,
+        essential: true
+    });
+    backBtn.classList.add('hidden');
+    previousView = null;
+});
+
+openPanelBtn.addEventListener('click', () => {
+    openPanel();
 });
 
 // Set coordinates function
@@ -161,7 +205,7 @@ function setCoordinates(lng, lat) {
 
 // Interactivity
 closeBtn.addEventListener('click', () => {
-    panel.style.display = 'none';
+    closePanel();
 });
 
 tabRiesgo.addEventListener('click', () => {
@@ -258,9 +302,10 @@ document.getElementById('target-btn').addEventListener('click', () => {
             (position) => {
                 const lng = position.coords.longitude;
                 const lat = position.coords.latitude;
+                saveCurrentView();
                 map.flyTo({ center: [lng, lat], zoom: 12 });
                 setCoordinates(lng, lat);
-                panel.style.display = 'flex';
+                openPanel();
             },
             () => {
                 alert("No se pudo obtener la ubicación actual.");
